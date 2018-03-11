@@ -16,6 +16,7 @@ struct argp_option Arguments::options[] = {
     { "min-frame",  'm',    "number",   0,  "Skip the first m frames", 0},
     { "max-frame",  'M',    "number",   0,  "Search up to the M'th frame. Default until the end of the file.", 0},
     { "thres",      'H',    "number",   0,  "Hessian threshold to SURF. The lower, the more keypoints are found also increasing the risk of false positives.",0},
+    { "scale",      'S',      NULL,    0,  "Scale the input images to the video's dimensions. Default false.",0},
     { "match-ratio",'r',    "float",    0,  "Minimum percentage [0-100] of image keypoint matches required to consider a frame as fully matched. Can be combined with -s. Default 100%. Repeat for each input image.", 0},
     { "snr",        's',    "float",    0,  "Minimum Signal to noise ratio [ >= 0] (keypoint matches / keypoint misses) required to consider a frame as fully matched. Can be combined with -r. Default infinity. Repeat for each input image.", 0},
     { "radius",     'R',    "float",    0,  "Radius of the circle around a keypoint of the image in which a keypoint of the frame must be to be considered a keypoint match. Default 5",0},
@@ -40,6 +41,7 @@ Arguments::Arguments(){
     this->decoderThreads = -1;
     this->queueSize = 5;
     this->outputFile = "";
+    this->scale = false;
 }
 
 int Arguments::parseArgs( int argc, char **argv ){
@@ -55,6 +57,10 @@ void Arguments::setArgpState( struct argp_state *state){
 
 void Arguments::setMinFrame( int frameNumber ){
     this->minFrame = frameNumber;
+}
+
+void Arguments::setDoScale(){
+    this->scale = true;
 }
 
 void Arguments::setMaxFrame( int frameNumber ){
@@ -105,6 +111,9 @@ int Arguments::getMinFrame(){
 }
 int Arguments::getMaxFrame(){
     return this->maxFrame;
+}
+bool Arguments::doScale(){
+    return this->scale;
 }
 int Arguments::getHessianThreshold(){
     return this->hessianThreshold;
@@ -211,6 +220,9 @@ error_t Arguments::argp_parse_opt (int key, char *arg, struct argp_state *state)
     case 'M': ;
         self->setMaxFrame( self->parseIntNumber( argstr ) );
         break;
+    case 'S': ;
+        self->setDoScale();
+        break;
     case 'H': ;
         self->setHessianThreshold( self->parseIntNumber( argstr ) );
         break;
@@ -258,6 +270,7 @@ error_t Arguments::argp_parse_opt (int key, char *arg, struct argp_state *state)
 void Arguments::printArguments(){
     std::printf( "minFrame: %d\n", this->getMinFrame() );
     std::printf( "maxFrame: %d\n", this->getMaxFrame() );
+    std::printf( "scale: %d\n", this->doScale() );
     std::printf( "matcherThreads: %d\n", this->getMatcherThreads() );
     std::printf( "decoderThreads: %d\n", this->getDecoderThreads() );
     std::printf( "queueSize: %d\n", this->getQueueSize() );

@@ -13,6 +13,18 @@
 SurfMatcher::SurfMatcher(){
     this->hessianThreshold = 500;
     this->keypointMatchRadius = 5.0;
+    this->videoWidth = 0;
+    this->videoHeight = 0;
+    this->scaleImages = false;
+}
+
+void SurfMatcher::setVideoDimensions( int width, int height){
+    this->videoWidth = width;
+    this->videoHeight = height;
+}
+
+void SurfMatcher::doScaleImages(){
+    this->scaleImages = true;
 }
 
 
@@ -31,7 +43,16 @@ void SurfMatcher::setKeypointMatchRadius( double r){
 void SurfMatcher::addImage( InputImage& img ){
     std::vector<cv::KeyPoint> keypoints;
     cv::Mat mat = cv::imread( img.getFileName() );
-    this->calcKeyPoints( mat, keypoints );
+
+    // scale image to match video size for better matching
+    if( this->videoWidth != 0 && this->videoHeight != 0 && this->scaleImages){
+        cv::Mat mat2;
+        cv::resize( mat, mat2, cv::Size(this->videoWidth, this->videoHeight),0,0, cv::INTER_CUBIC );
+        this->calcKeyPoints( mat2, keypoints );
+    }else{
+        this->calcKeyPoints( mat, keypoints );
+    }
+
     img.setKeyPoints( keypoints );
 
     // makes a copy of the image object

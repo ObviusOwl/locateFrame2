@@ -24,6 +24,10 @@ int main(int argc, char **argv) {
 
     // create and configure the master matcher (the threads will get a copy)
     SurfMatcher matcher;
+    matcher.setVideoDimensions( dec.getWidth(), dec.getHeight() );
+    if( args.doScale() ){
+        matcher.doScaleImages();
+    }
     matcher.setHessianThreshold( args.getHessianThreshold() );
     matcher.setKeypointMatchRadius( args.getKeypointMatchRadius() );
     // configure the input images (again, each thread will get a copy of all images)

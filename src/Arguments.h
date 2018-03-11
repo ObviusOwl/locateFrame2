@@ -12,6 +12,7 @@ public:
 
     void setMinFrame( int frameNumber );
     void setMaxFrame( int frameNumber );
+    void setDoScale();
     void setHessianThreshold( int thres );
     void setKeypointMatchRadius( double r );
     void setMatcherThreads( int count );
@@ -25,6 +26,7 @@ public:
 
     int getMinFrame();
     int getMaxFrame();
+    bool doScale();
     int getHessianThreshold();
     double getKeypointMatchRadius();
     int getMatcherThreads();
@@ -62,6 +64,7 @@ private:
     int matcherThreads;
     int decoderThreads;
     int queueSize;
+    bool scale;
     std::vector<std::string> searchFiles;
     std::string inputFile;
     std::string outputFile;

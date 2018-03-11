@@ -35,6 +35,13 @@ void VideoDecoder::setDecoderThreads( int num ){
 }
 
 
+int VideoDecoder::getWidth(){
+    return this->width;
+}
+int VideoDecoder::getHeight(){
+    return this->height;
+}
+
 void VideoDecoder::openFile( std::string fileName ){
     int ret;
     AVCodec *dec;
@@ -54,6 +61,11 @@ void VideoDecoder::openFile( std::string fileName ){
     if( this->decoderThreads > 0 ){
         this->codec_ctx->thread_count = this->decoderThreads;
     }
+
+    this->width = this->codec_ctx->width;
+    this->height = this->codec_ctx->height;
+    //this->codec_ctx->coded_width = this->codec_ctx->width;
+    //this->codec_ctx->coded_height = this->codec_ctx->height;
     
     /* init the video decoder */
     if( (ret = avcodec_open2(this->codec_ctx, dec, NULL)) < 0) {

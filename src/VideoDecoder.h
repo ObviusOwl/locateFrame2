@@ -38,12 +38,17 @@ public:
     VideoDecoder();
     ~VideoDecoder();
 
+    int getWidth();
+    int getHeight();
+
     void setDecoderThreads( int num );
 
     void openFile( std::string fileName );
     void decodeFrame( VideoFrame& frame );
 
 private:
+    int width;
+    int height;
     AVFormatContext* format_ctx;
     AVCodecContext* codec_ctx;
     int videoStreamIndex;

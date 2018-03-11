@@ -2,6 +2,7 @@
 #define SURF_MATCHER_H
 
 #include <vector>
+#include <tuple>
 #include <opencv2/opencv.hpp>
 #include <opencv2/nonfree/features2d.hpp>
 
@@ -17,6 +18,8 @@ public:
 
     void setHessianThreshold( int thres );
     void setKeypointMatchRadius( double r);
+    void setVideoDimensions( int width, int height);
+    void doScaleImages();
 
     void addImage( InputImage& img );
 
@@ -40,6 +43,9 @@ private:
     int hessianThreshold;
     double keypointMatchRadius;
     std::vector< InputImage > images;
+    int videoWidth;
+    int videoHeight;
+    bool scaleImages;
 };
 
 #endif // SURF_MATCHER_H
