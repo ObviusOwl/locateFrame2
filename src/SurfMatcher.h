@@ -30,6 +30,8 @@ public:
     void dumpBestMatch();
 
     static double getKeyPointDistance( cv::KeyPoint& kp1, cv::KeyPoint& kp2 );
+    int getBestTranslation( std::vector<cv::KeyPoint>& keypoints, 
+            std::vector<cv::KeyPoint>& nearest, int votes_init, std::vector<int>& best_trans);
 
     void updateMatchAverages( std::shared_ptr<Match> match );
     long getTotalKeypointMiss( std::shared_ptr<Match> match );
