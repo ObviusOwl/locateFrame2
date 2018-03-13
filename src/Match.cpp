@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cmath>
 #include <opencv2/opencv.hpp>
+#include <limits>
 
 #include "Match.h"
 
@@ -71,10 +72,24 @@ std::vector< cv::KeyPoint > Match::getMatchedKeypoints(){
 }
 
 double Match::getSnr(){
+    if( this->imageKeypointCount == 0 || this->keypointCount == 0){
+        // commonMiss will be 0, but not because all kp matched
+        return 0.0;
+    }
     double commonMiss = this->imageKeypointCount + this->keypointCount - (2*this->keypointMatchCount);
+    if( commonMiss == 0){
+        // all kp matched snr -> inf 
+        return std::numeric_limits<double>::infinity();
+    }else if( commonMiss < 0 ){
+        // error: more matches than keypoints
+        return 0.0;
+    }
     return (this->keypointMatchCount*2.0)/( commonMiss );
 }
 double Match::getMatchRatio(){
+    if( this->imageKeypointCount == 0 ){
+        return 0.0;
+    }
     return (this->keypointMatchCount*1.0)/ this->imageKeypointCount;
 }
 
