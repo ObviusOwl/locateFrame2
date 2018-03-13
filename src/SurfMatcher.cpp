@@ -158,7 +158,8 @@ std::vector< std::shared_ptr<Match> >  SurfMatcher::matchKeyPoints( std::vector<
 void SurfMatcher::updateBestMatch( std::shared_ptr<Match> match ){
     InputImage& img = this->images.at( match->getImageIndex() );
     Match currentBest = img.getBestMatch();
-    if( match->getKeypointMatchCount() > currentBest.getKeypointMatchCount() ){
+    if( match->getMatchRatio() > currentBest.getMatchRatio() 
+            && match->getSnr() > currentBest.getSnr() ){
         img.setBestMatch( *match );
     }
 }
