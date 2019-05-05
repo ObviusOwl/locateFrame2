@@ -58,37 +58,32 @@ int main(int argc, char **argv) {
     
     // create the workers and their threads
     std::list< std::shared_ptr<Worker> > workers;
-    std::list< std::shared_ptr<std::thread> > threads;
     int i;
     for( i=0; i< args.getMatcherThreads(); i++){
-        std::shared_ptr<Worker> worker = std::make_shared<Worker>();
+        std::shared_ptr<MatchWorker> worker = std::make_shared<MatchWorker>();
         worker->setQueue( queue );
         worker->setID( i );
-        worker->setImageCount( imageCount );
         worker->setMatcher( matcher );
-        // start thread
-        std::shared_ptr<std::thread> workerThread = std::make_shared<std::thread>( Worker::doWork, worker );
+        worker->start(); // start thread
         workers.push_back( worker );
-        threads.push_back( workerThread );
     }
     // create the encode worker responsible for finding the maximum match and encoding the output video
     // this is done sequencially, so all frames are in the correct order again
-    std::shared_ptr<Worker> encodeWorker = std::make_shared<Worker>();
+    std::shared_ptr<EncodeWorker> encodeWorker = std::make_shared<EncodeWorker>();
     encodeWorker->setQueue( queue );
     encodeWorker->setID( i++ );
     encodeWorker->setImageCount( imageCount );
     // the InputImages of the matcher of the encode worker 
     // will be the only ones storing the current best match
     encodeWorker->setMatcher( matcher );
-    std::shared_ptr<std::thread> workerThread = std::make_shared<std::thread>( Worker::doEncode, encodeWorker );
     workers.push_back( encodeWorker );
-    threads.push_back( workerThread );
 
     if( args.getOutputFile() != "" ){
         // enable encoding only if requested
         encodeWorker->enableEncode();
         encodeWorker->setOutputFile( args.getOutputFile() );
     }
+    encodeWorker->start(); // start thread
 
     int minFrame = args.getMinFrame();
     int maxFrame = args.getMaxFrame();
@@ -107,9 +102,9 @@ int main(int argc, char **argv) {
         }
     }
     
-    for ( auto &thread : threads ) {
+    for ( auto &worker : workers ) {
         // wait for all threads to terminate, especially the wencoder thread
-        thread->join();
+        worker->join();
     }
     // output the finalt sumary with all best matches
     encodeWorker->dumpBestMatch();

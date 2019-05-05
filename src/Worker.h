@@ -10,38 +10,65 @@
 #include "SurfMatcher.h"
 #include "WorkerQueue.h"
 
+
 class Worker{
 
 public:
     Worker();
-    //~Worker();
+    virtual void work() = 0;
+
+    void setID( int id );
+    void setQueue( std::shared_ptr<WorkerQueue> queue );
+
+    std::shared_ptr<std::thread> start();
+    void join();
+    std::shared_ptr<std::thread> getThread();
+    static void doWork( Worker* self );
+
+protected:
+    int ID;
+    std::shared_ptr<WorkerQueue> queue;
+    std::shared_ptr<std::thread> thread;
+};
+
+
+class MatchWorker : public Worker{
+
+public:
+    MatchWorker();
     void work();
-    void encode();
-    static void doWork( std::shared_ptr<Worker> self );
-    static void doEncode( std::shared_ptr<Worker> self );
-    void dumpBestMatch();
+
+    void setMatcher( SurfMatcher matcher );
 
     void drawKeyPoints( cv::Mat& mat, std::vector<cv::KeyPoint>& keypoints);
     void drawKeyPoints( cv::Mat& mat, std::vector<cv::KeyPoint>& keypoints, 
                 std::vector<cv::KeyPoint>& matchedKeypoints );
 
-    void setQueue( std::shared_ptr<WorkerQueue> queue );
-    void setID( int id );
-    void setImageCount( int num );
-    void setMatcher( SurfMatcher matcher );
-    void setOutputFile( std::string fileName );
-    void setTerminateMatchRatio( double r );
-    void enableEncode();
-    
 
 private:
-    std::shared_ptr<WorkerQueue> queue;
-    int ID;
+    long totalFramesSeen;
     SurfMatcher matcher;
+};
+
+class EncodeWorker : public Worker{
+
+public:
+    EncodeWorker();
+    void work();
+
+    void setImageCount( int num );
+    void setOutputFile( std::string fileName );
+    void enableEncode();
+    
+    void setMatcher( SurfMatcher matcher );
+    void dumpBestMatch();
+
+private:
+    long totalFramesSeen;
+    SurfMatcher matcher;
+
     bool encodeEnabled;
     std::string outputFile;
-    double terminateMatchRatio;
-    long totalFramesSeen;
     std::vector<int> imagesFound; // -2 => not found , -1 => queue notified, >= 0 => extra frames
     int imageCount;
 };

@@ -13,53 +13,68 @@
 #include "Match.h"
 #include "SurfMatcher.h"
 
+/*
+
+    Worker
+
+ */
+
 Worker::Worker(){
-    this->encodeEnabled = false;
-    this->outputFile = "";
-    this->imageCount = 0;
-    this->totalFramesSeen = 0;
+    this->ID = -1;
+    this->queue = nullptr;
+    this->thread = nullptr;
 }
 
-void Worker::doWork( std::shared_ptr<Worker> self ){
-    self->work();
-}
-void Worker::doEncode( std::shared_ptr<Worker> self ){
-    self->encode();
-}
-
-void Worker::setQueue( std::shared_ptr<WorkerQueue> queue ){
-    this->queue = queue;
-}
 void Worker::setID( int id ){
     this->ID = id;
 }
-void Worker::setImageCount( int num ){
-    this->imageCount = num;
+void Worker::setQueue( std::shared_ptr<WorkerQueue> queue ){
+    this->queue = queue;
 }
 
-void Worker::setMatcher( SurfMatcher matcher ){
+std::shared_ptr<std::thread> Worker::start(){
+    this->thread = std::make_shared<std::thread>( Worker::doWork, this );
+    return this->thread;
+}
+
+void Worker::join(){
+    if( this->thread != nullptr ){
+        this->thread->join();
+    }
+}
+
+std::shared_ptr<std::thread> Worker::getThread(){
+    return this->thread;
+}
+
+void Worker::doWork( Worker* self ){
+    self->work();
+}
+
+
+/*
+
+    Match Worker
+
+ */
+
+MatchWorker::MatchWorker() : Worker(){
+    this->totalFramesSeen = 0;
+}
+
+void MatchWorker::setMatcher( SurfMatcher matcher ){
     this->matcher = matcher;
 }
 
-void Worker::setOutputFile( std::string fileName ){
-    this->outputFile = fileName;
-}
-void Worker::enableEncode(){
-    this->encodeEnabled = true;
-}
-void Worker::setTerminateMatchRatio( double r ){
-    this->terminateMatchRatio = r;
-}
 
-
-void Worker::drawKeyPoints( cv::Mat& mat, std::vector<cv::KeyPoint>& keypoints){
+void MatchWorker::drawKeyPoints( cv::Mat& mat, std::vector<cv::KeyPoint>& keypoints){
     for( auto& kp : keypoints ){
         cv::Scalar color( 0, 0, 255 );
         cv::circle( mat, kp.pt, std::sqrt(kp.size), color );
     }
 }
 
-void Worker::drawKeyPoints( cv::Mat& mat, std::vector<cv::KeyPoint>& keypoints, 
+void MatchWorker::drawKeyPoints( cv::Mat& mat, std::vector<cv::KeyPoint>& keypoints, 
             std::vector<cv::KeyPoint>& matchedKeypoints ){
     cv::Scalar color;
     for( auto& kp : keypoints ){
@@ -74,11 +89,74 @@ void Worker::drawKeyPoints( cv::Mat& mat, std::vector<cv::KeyPoint>& keypoints,
     }
 }
 
-void Worker::dumpBestMatch(){
+void MatchWorker::work(){
+    while( 1 ){
+        std::shared_ptr<VideoFrame> frame = this->queue->dequeue();
+        if( frame == nullptr ){
+            // we want to quit
+            break;
+        }
+        std::vector<cv::KeyPoint> keypoints;
+        std::vector< std::shared_ptr<Match> > matches;
+        // get a openCV mat for keypoint calc and keypoint plot
+        cv::Mat mat = frame->toMat();
+        // detect keypoints of the frame
+        this->matcher.calcKeyPoints( mat, keypoints );
+        // match keypoints with all images by our copy of the matcher
+        matches = this->matcher.matchKeyPoints( keypoints );
+
+        // plot matches
+        if( matches.size() > 0 ){
+            std::vector<cv::KeyPoint> matchedKeypoints = matches[0]->getMatchedKeypoints();
+            this->drawKeyPoints( mat, keypoints, matchedKeypoints);
+        }else{
+            this->drawKeyPoints( mat, keypoints );
+        }
+
+        for( auto& match : matches ){
+            // set match infos and enqueue match for checking and video write
+            match->setOutputMat( mat );
+            match->setFrameTimestamp( frame->getTimestamp() );
+            match->setFrameIndex( frame->getIndex() );
+            match->setKeypointCount( keypoints.size() );
+            this->queue->enqueueMatch( match );
+        }
+    }
+}
+
+/*
+
+    Encode Worker
+
+ */
+
+EncodeWorker::EncodeWorker() : Worker(){
+    this->totalFramesSeen = 0;
+    this->imageCount = 0;
+
+    this->encodeEnabled = false;
+    this->outputFile = "";
+}
+
+void EncodeWorker::setMatcher( SurfMatcher matcher ){
+    this->matcher = matcher;
+}
+void EncodeWorker::setImageCount( int num ){
+    this->imageCount = num;
+}
+void EncodeWorker::setOutputFile( std::string fileName ){
+    this->outputFile = fileName;
+}
+
+void EncodeWorker::enableEncode(){
+    this->encodeEnabled = true;
+}
+
+void EncodeWorker::dumpBestMatch(){
     this->matcher.dumpBestMatch();
 }
 
-void Worker::encode(){
+void EncodeWorker::work(){
     bool videoOpen = false;
     cv::VideoWriter writer;
     for( int i=0; i<this->imageCount; i++){
@@ -143,37 +221,3 @@ void Worker::encode(){
     }
 }
 
-void Worker::work(){
-    while( 1 ){
-        std::shared_ptr<VideoFrame> frame = this->queue->dequeue();
-        if( frame == nullptr ){
-            // we want to quit
-            break;
-        }
-        std::vector<cv::KeyPoint> keypoints;
-        std::vector< std::shared_ptr<Match> > matches;
-        // get a openCV mat for keypoint calc and keypoint plot
-        cv::Mat mat = frame->toMat();
-        // detect keypoints of the frame
-        this->matcher.calcKeyPoints( mat, keypoints );
-        // match keypoints with all images by our copy of the matcher
-        matches = this->matcher.matchKeyPoints( keypoints );
-
-        // plot matches
-        if( matches.size() > 0 ){
-            std::vector<cv::KeyPoint> matchedKeypoints = matches[0]->getMatchedKeypoints();
-            this->drawKeyPoints( mat, keypoints, matchedKeypoints);
-        }else{
-            this->drawKeyPoints( mat, keypoints );
-        }
-
-        for( auto& match : matches ){
-            // set match infos and enqueue match for checking and video write
-            match->setOutputMat( mat );
-            match->setFrameTimestamp( frame->getTimestamp() );
-            match->setFrameIndex( frame->getIndex() );
-            match->setKeypointCount( keypoints.size() );
-            this->queue->enqueueMatch( match );
-        }
-    }
-}
