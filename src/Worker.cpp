@@ -5,7 +5,7 @@
 #include <condition_variable>
 #include <cstdio>
 #include <opencv2/opencv.hpp>
-#include <opencv2/nonfree/features2d.hpp>
+#include <opencv2/imgproc.hpp>
 #include <math.h>
 
 #include "Worker.h"

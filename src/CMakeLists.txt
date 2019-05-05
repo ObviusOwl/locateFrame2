@@ -7,7 +7,7 @@ pkg_check_modules( AV REQUIRED libswscale libavformat libavcodec libavutil libsw
 
 # require openCV
 set(OpenCV_STATIC ON)
-find_package(OpenCV REQUIRED core nonfree)
+find_package(OpenCV REQUIRED core imgproc videoio features2d)
 
 # project libraries
 add_library (KdTree ${CMAKE_SOURCE_DIR}/src/KdTree.cpp )

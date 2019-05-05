@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cmath>
 #include <opencv2/opencv.hpp>
-#include <opencv2/nonfree/features2d.hpp>
+#include <opencv2/features2d.hpp>
 
 #include "VideoFrame.h"
 #include "InputImage.h"
@@ -30,8 +30,8 @@ void SurfMatcher::doScaleImages(){
 
 
 void SurfMatcher::calcKeyPoints( cv::Mat& mat, std::vector<cv::KeyPoint>& keypoints ){
-    cv::SurfFeatureDetector surf(this->hessianThreshold);
-    surf.detect(mat, keypoints);
+    cv::Ptr<cv::FeatureDetector> fdetector = cv::ORB::create();
+    fdetector->detect(mat, keypoints);
 }
 
 void SurfMatcher::setHessianThreshold( int thres ){

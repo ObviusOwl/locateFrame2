@@ -15,7 +15,7 @@ char Arguments::args_doc[] = "-i VIDEO IMAGE [IMAGE ...]";
 struct argp_option Arguments::options[] = {
     { "min-frame",  'm',    "number",   0,  "Skip the first m frames", 0},
     { "max-frame",  'M',    "number",   0,  "Search up to the M'th frame. Default until the end of the file.", 0},
-    { "thres",      'H',    "number",   0,  "Hessian threshold to SURF. The lower, the more keypoints are found also increasing the risk of false positives.",0},
+    { "thres",      'H',    "number",   0,  "Ignored.",0},
     { "scale",      'S',      NULL,    0,  "Scale the input images to the video's dimensions. Default false.",0},
     { "match-ratio",'r',    "float",    0,  "Minimum percentage [0-100] of image keypoint matches required to consider a frame as fully matched. Can be combined with -s. Default 100%. Repeat for each input image.", 0},
     { "snr",        's',    "float",    0,  "Minimum Signal to noise ratio [ >= 0] (keypoint matches / keypoint misses) required to consider a frame as fully matched. Can be combined with -r. Default infinity. Repeat for each input image.", 0},
@@ -274,7 +274,6 @@ void Arguments::printArguments(){
     std::printf( "matcherThreads: %d\n", this->getMatcherThreads() );
     std::printf( "decoderThreads: %d\n", this->getDecoderThreads() );
     std::printf( "queueSize: %d\n", this->getQueueSize() );
-    std::printf( "hessianThreshold: %d\n", this->getHessianThreshold() );
     std::printf( "keypointMatchRadius: %f\n", this->getKeypointMatchRadius() );
 
     std::printf( "inputFile: %s\n", this->getInputFile().c_str() );

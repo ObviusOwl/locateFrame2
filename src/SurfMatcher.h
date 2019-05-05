@@ -4,7 +4,7 @@
 #include <vector>
 #include <tuple>
 #include <opencv2/opencv.hpp>
-#include <opencv2/nonfree/features2d.hpp>
+#include <opencv2/features2d.hpp>
 
 #include "VideoFrame.h"
 #include "InputImage.h"

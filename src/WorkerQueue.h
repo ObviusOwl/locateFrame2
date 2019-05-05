@@ -9,7 +9,6 @@
 #include <memory>
 #include <queue>
 #include <opencv2/opencv.hpp>
-#include <opencv2/nonfree/features2d.hpp>
 
 #include "Match.h"
 #include "VideoFrame.h"
