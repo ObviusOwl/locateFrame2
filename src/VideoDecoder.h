@@ -40,6 +40,7 @@ public:
 
     int getWidth();
     int getHeight();
+    double getFrameRate();
 
     void setDecoderThreads( int num );
 
@@ -49,6 +50,7 @@ public:
 private:
     int width;
     int height;
+    double frame_rate;
     AVPacket packet;
     bool has_packet;
     AVFormatContext* format_ctx;

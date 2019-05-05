@@ -136,6 +136,7 @@ EncodeWorker::EncodeWorker() : Worker(){
 
     this->encodeEnabled = false;
     this->outputFile = "";
+    this->frameRate = 25.0;
 }
 
 void EncodeWorker::setMatcher( SurfMatcher matcher ){
@@ -146,6 +147,9 @@ void EncodeWorker::setImageCount( int num ){
 }
 void EncodeWorker::setOutputFile( std::string fileName ){
     this->outputFile = fileName;
+}
+void EncodeWorker::setFrameRate( double rate ){
+    this->frameRate = rate;
 }
 
 void EncodeWorker::enableEncode(){
@@ -175,7 +179,7 @@ void EncodeWorker::work(){
         if( imageIndex == 0 && this->encodeEnabled ){
             // write output video for first image (keypoint matches plotted)
             if( ! videoOpen ){
-                writer.open( this->outputFile, CV_FOURCC('M','P','E','G'), 100, match->getOutputMat().size(), true );
+                writer.open( this->outputFile, CV_FOURCC('M','P','E','G'), this->frameRate, match->getOutputMat().size(), true );
                 videoOpen = true;
             }
             writer.write( match->getOutputMat() );

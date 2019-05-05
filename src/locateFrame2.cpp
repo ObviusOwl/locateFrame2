@@ -82,6 +82,11 @@ int main(int argc, char **argv) {
         // enable encoding only if requested
         encodeWorker->enableEncode();
         encodeWorker->setOutputFile( args.getOutputFile() );
+        try{
+            encodeWorker->setFrameRate( dec.getFrameRate() );
+        }catch( VideoDecoderError& e ){
+            encodeWorker->setFrameRate( 25.0 );
+        }
     }
     encodeWorker->start(); // start thread
 

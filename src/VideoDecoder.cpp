@@ -20,6 +20,7 @@ VideoDecoder::VideoDecoder(){
     this->format_ctx = avformat_alloc_context();
     this->codec_ctx = NULL;
     this->codec_par = NULL;
+    this->videoStreamIndex = -1;
     this->decoderThreads = -1;
 }
 
@@ -42,6 +43,16 @@ int VideoDecoder::getWidth(){
 }
 int VideoDecoder::getHeight(){
     return this->height;
+}
+double VideoDecoder::getFrameRate(){
+    if( this->videoStreamIndex < 0 ){
+        throw VideoDecoderError( "video file not opened" );
+    }
+    AVRational rate = this->format_ctx->streams[this->videoStreamIndex]->avg_frame_rate;
+    if( rate.den == 0 ){
+        throw VideoDecoderError( "avg_frame_rate not available" );
+    }
+    return rate.num*1.0 / rate.den;
 }
 
 void VideoDecoder::openFile( std::string fileName ){

@@ -59,6 +59,7 @@ public:
     void setImageCount( int num );
     void setOutputFile( std::string fileName );
     void enableEncode();
+    void setFrameRate( double rate );
     
     void setMatcher( SurfMatcher matcher );
     void dumpBestMatch();
@@ -69,6 +70,8 @@ private:
 
     bool encodeEnabled;
     std::string outputFile;
+    double frameRate;
+
     std::vector<int> imagesFound; // -2 => not found , -1 => queue notified, >= 0 => extra frames
     int imageCount;
 };
