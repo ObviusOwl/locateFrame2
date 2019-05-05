@@ -18,7 +18,7 @@ class VideoFrame{
 
 public:
     VideoFrame();
-    VideoFrame( enum PixelFormat pix_fmt, int width, int height );
+    VideoFrame( enum AVPixelFormat pix_fmt, int width, int height );
     ~VideoFrame();
 
     AVFrame* getAvFrame();

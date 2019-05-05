@@ -20,7 +20,7 @@ VideoFrame::VideoFrame(){
     this->sws_ctx = NULL;
 }
 
-VideoFrame::VideoFrame( enum PixelFormat pix_fmt, int width, int height ){
+VideoFrame::VideoFrame( enum AVPixelFormat pix_fmt, int width, int height ){
     this->setDimensions( width, height );
     this->setPixelFormat( pix_fmt );
     this->sws_ctx = NULL;

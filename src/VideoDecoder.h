@@ -49,8 +49,11 @@ public:
 private:
     int width;
     int height;
+    AVPacket packet;
+    bool has_packet;
     AVFormatContext* format_ctx;
     AVCodecContext* codec_ctx;
+    AVCodecParameters* codec_par;
     int videoStreamIndex;
     int frameCount;
     int decoderThreads;
