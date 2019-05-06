@@ -75,6 +75,11 @@ void VideoDecoder::openFile( std::string fileName ){
     if( !this->codec_ctx ){
         throw VideoDecoderError( "failed to allocate AVCodecContext" );
     }
+    ret = avcodec_parameters_to_context( this->codec_ctx, this->codec_par );
+    if( ret < 0 ){
+        throw VideoDecoderError( "failed to init AVCodecContext" );
+    }
+    
     if( this->decoderThreads > 0 ){
         this->codec_ctx->thread_count = this->decoderThreads;
     }
