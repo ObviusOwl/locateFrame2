@@ -1,7 +1,6 @@
 #ifndef WORKER_QUEUE_H
 #define WORKER_QUEUE_H
 
-#include <list>
 #include <vector>
 #include <thread>
 #include <mutex>
@@ -16,6 +15,11 @@
 class MatchComparator{
 public:
     bool operator() (std::shared_ptr<Match> m1, std::shared_ptr<Match> m2);
+};
+
+class VideoFrameComparator{
+public:
+    bool operator() (std::shared_ptr<VideoFrame> f1, std::shared_ptr<VideoFrame> f2);
 };
 
 class WorkerQueue{
@@ -41,13 +45,14 @@ private:
     size_t maxLength;
     std::mutex maxLengthMutex;
 
-    std::list< std::shared_ptr<VideoFrame> > items;
+    // prevent starvation with priority queue
+    std::priority_queue< std::shared_ptr<VideoFrame>, std::vector<std::shared_ptr<VideoFrame>>, VideoFrameComparator > items;
     std::mutex mutex;
     std::condition_variable condEnq;
     std::condition_variable condDeq;
 
-    long int matchEnqueueIndex;
-    long int matchDequeueIndex;
+    long int matchDequeueIndex; // used to track last dequeued frame index
+    int matchDequeueImageCount; // used to track if all matches from matchDequeueIndex have been dequeued
     // we use a priority queue sorted first by frame number then by image index
     std::priority_queue< std::shared_ptr<Match>, std::vector<std::shared_ptr<Match>>, MatchComparator > matchItems;
     std::mutex matchMutex;

@@ -1,4 +1,3 @@
-#include <list>
 #include <vector>
 #include <thread>
 #include <mutex>
@@ -12,27 +11,28 @@
 #include "Match.h"
 
 bool MatchComparator::operator() (std::shared_ptr<Match> m1, std::shared_ptr<Match> m2) {
-    bool ret = false;
     long int frame1 = m1->getFrameIndex();
     long int frame2 = m2->getFrameIndex();
-    if( frame1 == frame2 ){
-        if( m1->getImageIndex() > m2->getImageIndex() ){
-            ret = true;
-        }
-    }else if(frame1 > frame2) {
-        ret = true;
+    if( frame1 > frame2 ){
+        return true;
+    }else if( frame1 < frame2 ){
+        return false;
+    }else{
+        return ( m1->getImageIndex() < m2->getImageIndex() );
     }
-    return !ret; // the priority queue sorts the largest first, we want the smallest
 }
 
+bool VideoFrameComparator::operator() (std::shared_ptr<VideoFrame> f1, std::shared_ptr<VideoFrame> f2) {
+    return (f1->getIndex() > f2->getIndex()); // sort smallest index first
+}
 
 WorkerQueue::WorkerQueue(){
     this->maxLength = 5;
     this->imageCount = 0;
     this->imagesFound = 0;
     this->doTerminate = false;
-    this->matchEnqueueIndex = 0;
     this->matchDequeueIndex = -1;
+    this->matchDequeueImageCount = 0;
 }
 
 void WorkerQueue::setMaxLength( size_t len ){
@@ -89,8 +89,8 @@ std::shared_ptr<VideoFrame> WorkerQueue::dequeue(){
         return nullptr;
     }else{
         // get item and delete from list
-        std::shared_ptr<VideoFrame> item = this->items.front();
-        this->items.pop_front();
+        std::shared_ptr<VideoFrame> item = this->items.top();
+        this->items.pop();
         // release the lock in order to prevent deadlock
         doTerminateLock.unlock();
         mlock.unlock();
@@ -103,22 +103,19 @@ std::shared_ptr<VideoFrame> WorkerQueue::dequeue(){
 void WorkerQueue::enqueue( std::shared_ptr<VideoFrame> frame){
     // exclusive access
     std::unique_lock<std::mutex> mlock( this->mutex );
-    std::unique_lock<std::mutex> maxLengthLock( this->maxLengthMutex );
     std::unique_lock<std::mutex> doTerminateLock( this->doTerminateMutex );
 
     while( this->items.size() == this->maxLength  && ! this->doTerminate ){
         // wait until item arrives & unlock in correct order
         doTerminateLock.unlock();
-        maxLengthLock.unlock();
         this->condEnq.wait(mlock);
         // lock for next iteration
-        maxLengthLock.lock();
         doTerminateLock.lock();
     }
     doTerminateLock.unlock();
-    maxLengthLock.unlock();
 
-    this->items.push_back( frame );
+    this->items.push( frame );
+    int s = this->items.size();
 
     mlock.unlock();
     doTerminateLock.lock();
@@ -140,35 +137,62 @@ std::shared_ptr<Match> WorkerQueue::dequeueMatch(){
     std::unique_lock<std::mutex> mlock( this->matchMutex );
     std::unique_lock<std::mutex> doTerminateLock( this->doTerminateMutex );
 
-    int i = 0;
-    std::list< std::shared_ptr<Match> >::iterator index;
-    bool found = false;
-    while( this->matchItems.empty() && ! this->doTerminate ){
+    bool found = true;
+    while( true ){
+        if( this->doTerminate && this->matchItems.empty() ){
+            // empty the queue before terminate
+            break;
+        }
         doTerminateLock.unlock();
-        // wait until item arrives
-        this->matchCondDeq.wait(mlock);
+
+        if( ! this->matchItems.empty() ){
+            std::shared_ptr<Match> item = this->matchItems.top();
+            if( this->matchDequeueIndex < 0 ){
+                // init -> set up like we just dequeued the last match from the preceeding frame
+                // there is a chance we do not get the really first frame -> handle special later
+                this->matchDequeueIndex = item->getFrameIndex()-1;
+                this->matchDequeueImageCount = this->imageCount;
+            }
+            long int dqIdx = this->matchDequeueIndex;
+            long int frameIdx = item->getFrameIndex();
+
+            if( dqIdx+1 == frameIdx || frameIdx <= dqIdx ){
+                if( frameIdx < dqIdx+1 ){
+                    // frame too late -> pretend it has never existed
+                }else{
+                    if( this->matchDequeueImageCount == this->imageCount ){
+                        this->matchDequeueImageCount = 0;
+                        this->matchDequeueIndex = frameIdx; // max(dqIdx,frameIdx)==frameIdx at this point
+                    }
+                    this->matchDequeueImageCount = this->matchDequeueImageCount +1;
+                }
+                // dequeue the match
+                (this->matchItems).pop();
+                mlock.unlock();
+                // notify producer blocking on enqueue()
+                this->matchCondEnq.notify_all();
+                found = true;
+                return item;
+            }else{
+                found = false;
+            }
+        }
+
+        if( this->matchItems.empty() || ! found ){
+            // wait until item arrives
+            this->matchCondDeq.wait(mlock);
+        }
+
         // lock for next iteration
         doTerminateLock.lock();
     }
 
-    if( this->doTerminate ){
-        // release the locks in order to prevent deadlock
-        doTerminateLock.unlock();
-        mlock.unlock();
-        // notify all producer blocking on enqueue() to ensure termination
-        this->matchCondEnq.notify_all();
-        return nullptr;
-    }else{
-        // get item and delete from list
-        std::shared_ptr<Match> item = this->matchItems.top();
-        this->matchItems.pop();
-        // release the lock in order to prevent deadlock
-        doTerminateLock.unlock();
-        mlock.unlock();
-        // notify producer blocking on enqueue()
-        this->matchCondEnq.notify_all();
-        return item;
-    }
+    // release the locks in order to prevent deadlock
+    doTerminateLock.unlock();
+    mlock.unlock();
+    // notify all producer blocking on enqueue() to ensure termination
+    this->matchCondEnq.notify_all();
+    return nullptr;
 }
 
 
