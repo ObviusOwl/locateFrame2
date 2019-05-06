@@ -2,38 +2,31 @@
 
 # Usage
 
-# Build instructions
+Run time library dependencies:
 
-LocateFrame2 depends on OpenCV 2.4 nonfree module for SURF detection. This module is
-not included on ubuntu distributions. OpenCV ist only a build dependency since we link 
-the libraries statically.
-
-We also need libAV:
-
+```sh
+sudo apt-get install --no-install-recommends --no-install-suggests libopencv-core3.2 libopencv-features2d3.2
 ```
+
+Note the `--no-install-recommends` to avoid installing a complete desktop in containers. Also libav gets installed as a dependency of opencv.
+
+
+# Build Instructions
+
+LocateFrame2 depends on OpenCV 3.2.0 and libav (ffmpeg). Install the build dependencies:
+
+```sh
+sudo apt install build-essential cmake pkg-config
 sudo apt install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
-```
-
-Download opencv source code from https://opencv.org/releases.html and extract it. 
-
-Pick a install prefix and build & install OpenCV. 
-
-```
-cd opencv
-mkdir build
-cd build
-cmake -D CMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -D CMAKE_INSTALL_PREFIX=/media/files/Software/opencv ..
-make -j4
-make install
+sudo apt install libopencv-dev
 ```
 
 Then build LocateFrame2
 
-```
-cd locateframe2
+```sh
 mkdir build
 cd build
-cmake -DCMAKE_PREFIX_PATH=/media/files/Software/opencv/share/OpenCV/ ..
+cmake ..
 make locateFrame2
 ```
 
