@@ -94,6 +94,12 @@ int main(int argc, char **argv) {
     int maxFrame = args.getMaxFrame();
     while( 1 ){
         // main loop decodign the frames
+
+        if( queue->getTerminate() ){
+            // images found
+            break;
+        }
+
         std::shared_ptr<VideoFrame> frame = std::make_shared<VideoFrame>();
         try{
             dec.decodeFrame( *frame );

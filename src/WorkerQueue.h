@@ -27,6 +27,7 @@ class WorkerQueue{
 public:
     WorkerQueue();
     void terminate();
+    bool getTerminate();
     void setMaxLength( size_t len );
     void setImageCount( int num );
 

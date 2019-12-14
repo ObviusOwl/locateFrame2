@@ -54,6 +54,14 @@ void WorkerQueue::terminate(){
     this->condDeq.notify_all();
     this->matchCondDeq.notify_all();
 }
+
+bool WorkerQueue::getTerminate(){
+    std::unique_lock<std::mutex> mlock( this->doTerminateMutex );
+    bool term = this->doTerminate;
+    mlock.unlock();
+    return term;
+}
+
 void WorkerQueue::imageFound(){
     // exclusive access
     std::unique_lock<std::mutex> mlock( this->doTerminateMutex );
