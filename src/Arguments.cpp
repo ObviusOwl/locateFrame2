@@ -207,9 +207,18 @@ error_t Arguments::argp_parse_opt (int key, char *arg, struct argp_state *state)
     // cast back our instance passed to argp in Arguments::parseArgs
     Arguments * self = static_cast<Arguments *>(state->input);
     self->setArgpState( state );
+
+    // 0-length args (switches)
+    switch (key){
+    case 'S': ;
+        self->setDoScale();
+        return 0;
+    }
+
+    // args with a value
     if( arg == NULL ){
+        // require a value
         return ARGP_ERR_UNKNOWN;
-        //throw std::invalid_argument( "arg must not be NULL" );
     }
     std::string argstr(arg);
 
@@ -219,9 +228,6 @@ error_t Arguments::argp_parse_opt (int key, char *arg, struct argp_state *state)
         break;
     case 'M': ;
         self->setMaxFrame( self->parseIntNumber( argstr ) );
-        break;
-    case 'S': ;
-        self->setDoScale();
         break;
     case 'H': ;
         self->setHessianThreshold( self->parseIntNumber( argstr ) );
