@@ -36,7 +36,6 @@ WorkerQueue::WorkerQueue(){
 }
 
 void WorkerQueue::setMaxLength( size_t len ){
-    std::unique_lock<std::mutex> mlock( this->maxLengthMutex );
     this->maxLength = len;
 }
 
@@ -46,7 +45,7 @@ void WorkerQueue::setImageCount( int num ){
 
 void WorkerQueue::terminate(){
     // exclusive access
-    std::unique_lock<std::mutex> mlock( this->doTerminateMutex );
+    std::unique_lock mlock( this->doTerminateMutex );
     this->doTerminate = true;
     // release the lock to prevent deadlock
     mlock.unlock();
@@ -56,7 +55,7 @@ void WorkerQueue::terminate(){
 }
 
 bool WorkerQueue::getTerminate(){
-    std::unique_lock<std::mutex> mlock( this->doTerminateMutex );
+    std::shared_lock mlock( this->doTerminateMutex );
     bool term = this->doTerminate;
     mlock.unlock();
     return term;
@@ -64,7 +63,7 @@ bool WorkerQueue::getTerminate(){
 
 void WorkerQueue::imageFound(){
     // exclusive access
-    std::unique_lock<std::mutex> mlock( this->doTerminateMutex );
+    std::unique_lock mlock( this->doTerminateMutex );
     // terminate if all images have been found
     this->imagesFound++;
     if( this->imagesFound == this->imageCount ){
@@ -79,7 +78,8 @@ void WorkerQueue::imageFound(){
 std::shared_ptr<VideoFrame> WorkerQueue::dequeue(){
     // exclusive access
     std::unique_lock<std::mutex> mlock( this->mutex );
-    std::unique_lock<std::mutex> doTerminateLock( this->doTerminateMutex );
+    // shared read access
+    std::shared_lock doTerminateLock( this->doTerminateMutex );
 
     while( this->items.empty() && ! this->doTerminate){
         doTerminateLock.unlock();
@@ -111,7 +111,8 @@ std::shared_ptr<VideoFrame> WorkerQueue::dequeue(){
 void WorkerQueue::enqueue( std::shared_ptr<VideoFrame> frame){
     // exclusive access
     std::unique_lock<std::mutex> mlock( this->mutex );
-    std::unique_lock<std::mutex> doTerminateLock( this->doTerminateMutex );
+    // shared read access
+    std::shared_lock doTerminateLock( this->doTerminateMutex );
 
     while( this->items.size() == this->maxLength  && ! this->doTerminate ){
         // wait until item arrives & unlock in correct order
@@ -143,7 +144,7 @@ void WorkerQueue::enqueue( std::shared_ptr<VideoFrame> frame){
 std::shared_ptr<Match> WorkerQueue::dequeueMatch(){
     // output the frames in sequencial order.
     std::unique_lock<std::mutex> mlock( this->matchMutex );
-    std::unique_lock<std::mutex> doTerminateLock( this->doTerminateMutex );
+    std::shared_lock doTerminateLock( this->doTerminateMutex );
 
     bool found = true;
     while( true ){

@@ -4,6 +4,7 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <shared_mutex>
 #include <condition_variable>
 #include <memory>
 #include <queue>
@@ -41,10 +42,9 @@ public:
  
 private:
     bool doTerminate;
-    std::mutex doTerminateMutex;
+    std::shared_mutex doTerminateMutex;
 
     size_t maxLength;
-    std::mutex maxLengthMutex;
 
     // prevent starvation with priority queue
     std::priority_queue< std::shared_ptr<VideoFrame>, std::vector<std::shared_ptr<VideoFrame>>, VideoFrameComparator > items;
