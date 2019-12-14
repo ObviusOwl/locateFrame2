@@ -95,7 +95,14 @@ int main(int argc, char **argv) {
     while( 1 ){
         // main loop decodign the frames
         std::shared_ptr<VideoFrame> frame = std::make_shared<VideoFrame>();
-        dec.decodeFrame( *frame );
+        try{
+            dec.decodeFrame( *frame );
+        }catch( VideoDecoderError& e ){
+            std::cerr << "Decode Error: " << e.what() << '\n';
+            queue->terminate();
+            break;
+        }
+
         if( frame->getIndex() >= minFrame ){
             // skip the first decoded frames until minFrame is reached
             queue->enqueue( frame );
